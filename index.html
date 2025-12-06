@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zen Breath Pro | Vibe Coding</title>
+    <style>
+        /* 基礎設定 */
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #fff;
+            overflow: hidden;
+            transition: background 1.5s ease; /* 讓背景切換很滑順 */
+        }
+
+        /* 主題定義 */
+        body.theme-morning {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        }
+        body.theme-night {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+        }
+        body.theme-forest {
+            background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        /* 呼吸圓圈 */
+        .circle-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circle {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.2);
+            animation: breathe 8s infinite ease-in-out;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 文字樣式 */
+        .instruction {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            min-height: 3rem; /* 避免文字跳動 */
+        }
+
+        .counter {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        /* 控制面板 (Glassmorphism) */
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .theme-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .theme-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .theme-btn:hover { transform: scale(1.2); }
+        .t-morning { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+        .t-night { background: linear-gradient(135deg, #0f2027, #2c5364); }
+        .t-forest { background: linear-gradient(135deg, #134e5e, #71b280); }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
+        /* 動畫關鍵影格 */
+        @keyframes breathe {
+            0%, 100% { transform: scale(0.6); } /* 吐氣 */
+            50% { transform: scale(1.1); } /* 吸氣 */
+        }
+    </style>
+</head>
+<body class="theme-morning">
+
+    <audio id="bg-music" loop>
+        <source src="https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg" type="audio/ogg">
+    </audio>
+
+    <div class="container">
+        <div class="circle-container">
+            <div class="circle"></div>
+            <div class="circle" style="animation-delay: 0.2s; width: 85%; height: 85%;"></div>
+            <div class="circle" style="animation-delay: 0.4s; width: 70%; height: 70%;"></div>
+        </div>
+
+        <div id="text-guide" class="instruction">Inhale</div>
+        <div class="counter">Breaths taken: <span id="count">0</span></div>
+
+        <div class="controls">
+            <div class="theme-buttons">
+                <div class="theme-btn t-morning" onclick="setTheme('theme-morning')" title="Morning Vibe"></div>
+                <div class="theme-btn t-forest" onclick="setTheme('theme-forest')" title="Forest Vibe"></div>
+                <div class="theme-btn t-night" onclick="setTheme('theme-night')" title="Night Vibe"></div>
+            </div>
+            <button class="action-btn" id="music-btn" onclick="toggleMusic()">
+                <span>🎵 Play Rain Sound</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const textElement = document.getElementById('text-guide');
+        const countElement = document.getElementById('count');
+        const musicBtn = document.getElementById('music-btn');
+        const audio = document.getElementById('bg-music');
+        
+        let breathCount = 0;
+        let isPlaying = false;
+
+        // 設定呼吸文字與計數
+        function breatheLoop() {
+            // 4秒吸氣
+            setTimeout(() => { 
+                textElement.innerText = "Inhale (吸)"; 
+            }, 0);
+            
+            // 3.5秒屏息 (簡化)
+            setTimeout(() => { 
+                textElement.innerText = "Hold (止)"; 
+            }, 4000); 
+
+            // 4秒吐氣
+            setTimeout(() => { 
+                textElement.innerText = "Exhale (吐)"; 
+                // 在吐氣開始時計數+1
+                breathCount++;
+                countElement.innerText = breathCount;
+            }, 5500); 
+        }
+
+        // 啟動與循環 (配合 CSS 8秒動畫)
+        breatheLoop();
+        setInterval(breatheLoop, 8000);
+
+        // 切換主題功能
+        function setTheme(themeName) {
+            document.body.className = themeName;
+        }
+
+        // 音樂開關
+        function toggleMusic() {
+            if (isPlaying) {
+                audio.pause();
+                musicBtn.innerHTML = "<span>🎵 Play Rain Sound</span>";
+                musicBtn.style.background = "rgba(255, 255, 255, 0.2)";ㄗㄣ
+            } else {
+                // 注意：瀏覽器可能會因為沒有使用者互動而阻擋自動播放，所以必須由按鈕觸發
+                audio.volume = 0.5; // 音量 50%
+                audio.play();
+                musicBtn.innerHTML = "<span>⏸ Pause Sound</span>";
+                musicBtn.style.background = "rgba(255, 255, 255, 0.4)";
+            }
+            isPlaying = !isPlaying;
+        }
+    </script>
+</body>
+</html>
